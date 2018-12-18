@@ -89,17 +89,20 @@ void main() {
 
         public void GlErrorCheck() {
             ErrorCode glError;
+            bool error = false;
             StringBuilder output = new StringBuilder();
 
+            // have to call glGetError in a loop! it pops an error-stack which can gain multiple entries at once
             glError = GL.GetErrorCode();
             while(glError != ErrorCode.NoError) {
+                error = true;
                 output.AppendLine(Enum.GetName(typeof(ErrorCode), glError));
                 glError = GL.GetErrorCode();
             }
             string message = output.ToString();
-            if (message != "") {
-                ShowDialog(message);
-            }
+
+            // used to check if message was the empty string, failed on hardware with empty dialogs -- other whitespace?
+            if (error) { ShowDialog("OpenGL error: " + message); } 
         }
 
         public int LoadShader(ShaderType type, string code) {
@@ -112,7 +115,7 @@ void main() {
             int compileStatus;
             GL.GetShader(s, ShaderParameter.CompileStatus, out compileStatus);
             if (compileStatus == (int)Boolean.False) {
-                ShowDialog(GL.GetShaderInfoLog(s));
+                ShowDialog("Shader-compile error: " + GL.GetShaderInfoLog(s));
             }
 
             return s;
@@ -126,6 +129,7 @@ void main() {
             GL.AttachShader(p, vertex);
             GL.AttachShader(p, fragment);
             GL.LinkProgram(p);
+            GL.ValidateProgram(p);
             GL.DeleteShader(vertex); // flags shader for deletion when detached
             GL.DeleteShader(fragment);
 
@@ -135,7 +139,7 @@ void main() {
             GL.GetProgram(p, ProgramParameter.LinkStatus, out linkStatus);
             GL.GetProgram(p, ProgramParameter.ValidateStatus, out validationStatus);
             if (linkStatus == (int)Boolean.False || validationStatus == (int)Boolean.False) {
-                ShowDialog(GL.GetProgramInfoLog(p));
+                ShowDialog("OpenGL Program linking/validation error: " + GL.GetProgramInfoLog(p));
             }
 
             return p;
