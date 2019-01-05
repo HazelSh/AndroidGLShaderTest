@@ -5,21 +5,21 @@ using Android.Widget;
 using Android.Content;
 using Android.Util;
 
-using System.Text;
 using System;
+using System.Text;
+using System.IO;
 
-using OpenTK.Graphics.ES31;
-using OpenTK.Graphics;
-using OpenTK.Platform.Android;
 using OpenTK;
+using OpenTK.Graphics;
+using OpenTK.Graphics.ES31;
+using OpenTK.Platform.Android;
 
 using Boolean = OpenTK.Graphics.ES31.Boolean;
 
+
 /// TODO:
-/// draw a square with element / index buffer and DrawElements
-/// pass coords into shader
+/// change drawing code to use index buffer and drawElements
 /// port over raymarcher fragment shader from old project
-/// perspective correction!
 
 namespace AndroidGL {
 
@@ -51,28 +51,13 @@ namespace AndroidGL {
         int androidGLprogram;
         uint vao;
 
-        // TODO: move shaders to Android assets
-        string vertexCode = @"#version 300 es
-layout (location = 0) in vec3 position;
-
-void main() {
-    gl_Position = vec4(position, 1.0);
-}
-";
-
-        string fragmentCode = @"#version 300 es
-precision mediump float;
-
-out vec4 FragColor; // in es with only one output, no need to specify location
-
-void main() {
-    FragColor = vec4(1.0, 0.8, 0.9, 1.0); // light pink
-}
-";
         // as normalized device coords -- no model/view/projection/camera transforms yet
-        float[] vertices = new float[] {  0.0f,  0.5f, 0.0f,    // top
-                                         -0.8f, -0.5f, 0.0f,    // bottom left
-                                          0.8f, -0.5f, 0.0f };  // bottom right
+        float[] vertices = new float[] { -0.98f,  0.98f, 0.0f,    // top left
+                                         -0.98f, -0.98f, 0.0f,    // bottom left
+                                          0.98f, -0.98f, 0.0f,    // bottom right
+                                         -0.98f,  0.98f, 0.0f,    // top left again -- set up ebo/drawElements at some point
+                                          0.98f, -0.98f, 0.0f,    // bottom right again
+                                          0.98f,  0.98f, 0.0f };  // top right
 
         public myGLView (Activity activity, Size size) : base (activity) {
             screensize = size;
@@ -156,10 +141,30 @@ void main() {
             GL.ClearColor(0.2f, 0.2f, 0.2f, 1.0f); // slate grey
 
             GL.Viewport(0, 0, screensize.Width, screensize.Height);
-            
-            // setup program and VAO for renderer
+
+            // read shader source
+            string vertexCode;
+            using (StreamReader s = new StreamReader(context.Assets.Open("vertex.glsl"))) {
+                vertexCode = s.ReadToEnd();
+            }
+
+            string fragmentCode;
+            using (StreamReader s = new StreamReader(context.Assets.Open("colorflow.frag"))) {
+                fragmentCode = s.ReadToEnd();
+            }
+
+            // setup program
             androidGLprogram = LoadProgram(vertexCode, fragmentCode);
 
+            // setup uniforms
+            GL.UseProgram(androidGLprogram);
+            GL.Uniform2(GL.GetUniformLocation(androidGLprogram, "screenSize"), (float)screensize.Width, (float)screensize.Height);
+
+            // setup to update time per-frame
+            initialTime = SystemClock.ElapsedRealtime();
+            timeLocation = GL.GetUniformLocation(androidGLprogram, "time");
+
+            // setup vao
             GL.GenVertexArrays(1, out vao);
             GL.BindVertexArray(vao);
 
@@ -176,18 +181,23 @@ void main() {
 
         protected override void OnUpdateFrame(FrameEventArgs e) {
             base.OnUpdateFrame(e);
+            // world sim (physics timestep) goes here?
         }
 
+        long currentTime;
+        long initialTime;
+        int timeLocation;
         protected override void OnRenderFrame(FrameEventArgs e) {
             base.OnRenderFrame(e);
-
+            
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
+            currentTime = SystemClock.ElapsedRealtime();
             GL.UseProgram(androidGLprogram);
-            GL.BindVertexArray(vao);
-            GL.DrawArrays(BeginMode.Triangles, 0, 3);
+            GL.Uniform1(timeLocation, (int)(currentTime - initialTime));
 
-            // GlErrorCheck();
+            GL.BindVertexArray(vao);
+            GL.DrawArrays(BeginMode.Triangles, 0, 6);
 
             SwapBuffers();
         }
