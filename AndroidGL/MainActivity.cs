@@ -23,7 +23,8 @@ using Boolean = OpenTK.Graphics.ES31.Boolean;
 
 namespace AndroidGL {
 
-    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", Icon = "@mipmap/android_gl_icon", MainLauncher = true)]
+    // Renderer view
+    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", Icon = "@mipmap/android_gl_icon")]
     public class MainActivity : Activity {
 
         protected override void OnCreate(Bundle savedInstanceState) {
@@ -33,7 +34,10 @@ namespace AndroidGL {
             DisplayMetrics display = new DisplayMetrics();
             this.WindowManager.DefaultDisplay.GetMetrics(display); // modifies display
 
-            AndroidGameView gameView = new myGLView(this, new Size(display.WidthPixels, display.HeightPixels));
+            AndroidGameView gameView = new myGLView(this, 
+                new Size(display.WidthPixels, display.HeightPixels),
+                this.Intent.GetStringExtra("filename"));
+
             SetContentView(gameView);
 
             gameView.Run(30.0);
@@ -46,6 +50,7 @@ namespace AndroidGL {
         // initialized with 
         Activity context;
         Size screensize;
+        string shaderFilename;
 
         // state sharing between methods
         int androidGLprogram;
@@ -59,13 +64,15 @@ namespace AndroidGL {
                                           0.98f, -0.98f, 0.0f,    // bottom right again
                                           0.98f,  0.98f, 0.0f };  // top right
 
-        public myGLView (Activity activity, Size size) : base (activity) {
+        public myGLView (Activity activity, Size size, string filename) : base (activity) {
             screensize = size;
             context = activity;
+            shaderFilename = filename;
         }
 
-        public void ShowDialog(string message)
-        {
+        // really simple method for putting strings on screen
+        // dialogs are better than toasts if there's any chance of getting 3 at once
+        public void ShowDialog(string message) {
             AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(context);
             dialogBuilder.SetMessage(message);
             AlertDialog dialog = dialogBuilder.Create();
@@ -86,7 +93,7 @@ namespace AndroidGL {
             }
             string message = output.ToString();
 
-            // used to check if message was the empty string, failed on hardware with empty dialogs -- other whitespace?
+            // in past, checked if error was empty string, but that failed on hardware with empty dialogs -- maybe other whitespace?
             if (error) { ShowDialog("OpenGL error: " + message); } 
         }
 
@@ -149,7 +156,7 @@ namespace AndroidGL {
             }
 
             string fragmentCode;
-            using (StreamReader s = new StreamReader(context.Assets.Open("colorflow.frag"))) {
+            using (StreamReader s = new StreamReader(context.Assets.Open("shaders/" + shaderFilename))) {
                 fragmentCode = s.ReadToEnd();
             }
 
