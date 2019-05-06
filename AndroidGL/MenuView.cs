@@ -15,9 +15,10 @@ using Android.Widget;
 // add a more complicated list-item layout, with an image to preview the shader
 // debug rendering pauses on hardware
 // debug raymarching shader on hardware -- why does it crash?
+// raymarcher: shadows! and material colors, colored lights. animation too. 
 // source code view for shaders! -- another view? access from list?
 // new and interesting things in glsl -- heightmap terrain? implict surfaces? 3d fractals? physically based rendering? translucency/SSS?
-// play with distance fields! object blending
+// play with distance fields! object blending, deformations, etc. 
 
 namespace AndroidGL
 {

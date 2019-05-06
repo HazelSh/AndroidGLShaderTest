@@ -16,20 +16,19 @@ const float pi = 3.14159265359;
 
 //// utility
 
-float deg2rad (in float d) {
-	return d * (pi / 180.0); 
-}
-
-// matrix for 3d rotation around the Y axis taken from pg.147 of my grahpics textbook
 mat3x3 rotY (float angle) {
 	float cosY = cos(angle);
 	float sinY = sin(angle);
 	return mat3x3(cosY, 0, sinY, 0, 1, 0, -sinY, 0, cosY);
 }
 
-// for rotation and translation only, which don't distort space 
+// for rotation and translation only. scales need the space normalized after, no idea for shears
 vec3 Transform (vec3 p, mat3x3 t) {
 	return inverse(t) * p; 
+}
+
+float deg2rad (in float d) {
+	return d * (pi / 180.0); 
 }
 
 //// signed distance field object functions 
@@ -56,16 +55,14 @@ float oSubtract (float o1, float o2) { return max(-o1, o2); }
 
 float oUnion (float o1, float o2) { return min(o1, o2); }
 
-const int objectCount = 3;
+const int objectCount = 2;
 
 // sample the distancefield
 vec2 distanceField (vec3 point) {
 	
 	float[objectCount] objects;
 	objects[0] = groundplane(point);
-	float rotatedCube = cube(Transform(point, rotY(deg2rad(30.0 * (float(time) * 0.001)))), 1.8);
-	objects[1] = oIntersect(oSubtract(sphere(point, 2.4), rotatedCube), sphere(point, 2.6));
-	objects[2] = sphere(point - vec3(0.0), 1.1);
+	objects[1] = cube(Transform(point, rotY(deg2rad(30.0 * (float(time) * 0.001)))), 1.4); // 30 degrees per s					  
 
 	float dist = objects[0];
 	int selectedObject = 0; // init with groundplane

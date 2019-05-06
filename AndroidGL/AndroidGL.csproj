@@ -75,6 +75,7 @@
     <AndroidAsset Include="Assets\shaders\colorflow.frag" />
     <AndroidAsset Include="Assets\shaders\spirals_1.frag" />
     <AndroidAsset Include="Assets\shaders\raymarch.frag" />
+    <AndroidAsset Include="Assets\shaders\rotate.frag" />
     <None Include="Properties\AndroidManifest.xml">
       <SubType>Designer</SubType>
     </None>
